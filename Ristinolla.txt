@@ -1,0 +1,242 @@
+// Ristinolla.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+
+void PeliKaynnista();
+void Ohje();
+void Piirto (int taulu[100][100], int *koordinaatisto);
+void Tarkistaja (int taulu[100][100], int *tarkista, char pelaaja1[20], char pelaaja2[20], bool &peli, int *laskuri, int *koko);
+int Sijoittaja (int *x, int *y, int *koko, int taulu[100][100], bool &vuoro, int *tarkista, int *laskuri);
+
+int _tmain(int argc, _TCHAR* argv[])
+{
+	int valinta = 0;
+
+	while (valinta != 3){
+
+		printf("\n\t1.Aloita\n\t2.Ohje\n\t3.Poistu\n\n\t");
+		scanf("%d", &valinta);
+
+		if (valinta == 1){
+			PeliKaynnista();	
+		}
+		else if(valinta == 2){
+			Ohje();
+		}
+		else if(valinta == 3){
+		}
+		else{
+			printf("\n\tValintaa ei tunnisteta\n\n");	
+		}
+	}
+	return 0;
+}
+
+
+
+void PeliKaynnista(){
+	
+
+	
+	int taulu[100][100];							// Alustetaan taulukko ruudukon tekoon
+	int koko = 0;									// Haluttu koko (AxA)
+	int tarkista = 1;								// Muuttuja voittajan tarkistamiseen (1 = pelaaja1, 2 = pelaaja2)
+	int laskuri = 0;								// Tasapelin laskentaan, kun ruudut ovat t‰ynn‰
+
+	bool peli = false;								// Peli on k‰ynniss‰, kun true
+	bool vuoro = false;								// Pelivuorot, false = p1, true = p2
+
+	char pelaaja1[20];								// Nimien tallettamiseen
+	char pelaaja2[20];
+
+	printf("\nAnna ensimmaisen pelaajan nimi: ");
+	fflush(stdin);									// tyhjennet‰‰n puskuri
+	scanf("%s", pelaaja1);								// Pelaajan1 nimi
+
+	printf("Anna toisen pelaajan nimi: ");
+	fflush(stdin);									// tyhjennet‰‰n puskuri
+	scanf("%s", pelaaja2);								// Pelaajan2 nimi
+											
+	printf("Kuinka ison taulun haluat (Valitse A, piirtaa (A x A))? ");
+	fflush(stdin);
+	scanf("%d", &koko);								// Taulun koko, esim 5 => 5x5 kentt‰
+	printf("\n\n\n");
+
+	peli = true;									// Pelimuuttuja p‰‰lle, peli loppuu jos peli = false
+
+	for(int i = 0; i < koko; i++){					// Alustetaan taulun muuttujiin nollat, jotta niiss‰ ei vahingossakaan ole 1 tai 2
+		for(int k = 0; k < koko; k++){
+			taulu[i][k] = 0;
+		}
+	}
+													// Niin kauan kuin peli = true, pyˆrit‰‰n loopissa
+	while (peli){
+
+		int x = 0;									// Alustetaan x- ja y-koordinaatit
+		int y = 0;
+		
+		Piirto(taulu, &koko);						// Kutsutaan funktiota Piirto parametreilla taulu ja koko
+
+		if (vuoro == false){
+			printf("\n\n\tPelaajan %s vuoro.\n", pelaaja1);		// false = pelaaja1, true = pelaaja2
+		}
+		else{
+			printf("\n\n\tPelaajan %s vuoro.\n", pelaaja2);
+		}
+
+		printf("\tX-koordinaatti: ");
+		fflush(stdin);
+		scanf("%d", &x);						// Otetaan vastaan x- ja y-koordinaatit
+
+		printf("\tY-koordinaatti: ");
+		fflush(stdin);
+		scanf("%d", &y);
+		printf("\n\n");
+
+		laskuri = Sijoittaja(&x, &y, &koko, taulu, vuoro, &tarkista, &laskuri);
+
+		Tarkistaja(taulu, &tarkista, pelaaja1, pelaaja2, peli, &laskuri, &koko);	// Kutsutaan Tarkistaja-funktiota em. parametreilla
+	}
+
+	Piirto(taulu, &koko);													// Kutsutaan funktiota Piirto parametreilla taulu ja koko
+
+
+	fflush(stdin);															// Tyhjennet‰‰n puskuri
+	printf("\n\nPaina mita tahansa jatkaaksesi.");
+	getchar();																// Sammuttaa ohjelman mist‰ tahansa painikkeesta
+
+}
+
+void Ohje(){
+	printf("\n\n\tRISTINOLLA\n");											// Peliohjeet
+	printf("\t----------\n\n");
+	printf("Pelin tarkoituksena on saada viisi samanlaista merkkia,\nristia tai nollaa, perakkain.\n");
+	printf("Merkit voivat olla perakkain pysty-, vaaka- tai vinosuunnassa.\n");
+	printf("Pelaajista ensimmainen on risti, toinen nolla.\n");
+	printf("Merkinta tapahtuu kayttamalla koordinaatiston x- ja y-akselia.\n\n");
+	printf("Jatka painamalla mita tahansa painiketta. ");
+
+	fflush(stdin);															// Puskurin tyhjennys ja reaktion odotus
+	getchar();
+	printf("\n\n");
+
+}
+
+
+void Piirto (int taulu[100][100], int *koordinaatisto){
+	
+	int koko = *koordinaatisto;
+	int laskuri = *koordinaatisto;
+
+	for(int i = 0; i < koko; i++){
+		printf("\t");
+		for(int k = 0; k < koko; k++){
+																// Jos alkiossa on 1 [x], jos alkiossa on 2 [o], jos alkiossa jotain muuta [ ] (piirret‰‰n kuva)
+			if (taulu[k][i] == 1){
+				printf("[x]");
+			}
+			else if (taulu[k][i] == 2){
+				printf("[o]");
+			}
+			else{
+				printf("[ ]");
+			}
+
+			if (k == (koko - 1)){
+				printf(" %d\n", laskuri);						// Piirret‰‰n koordinaatisto ja vaihdetaan rivi‰
+				laskuri--;					
+			}
+		}
+	}
+	printf("\t");
+
+	for (int i = 0; i < koko; i++){
+		printf(" %d ", i+1);									// Koordinaatiston alaosa
+	}
+
+}
+
+int Sijoittaja (int *x, int *y, int *koko, int taulu[100][100], bool &vuoro, int *tarkista, int *laskuri){
+	
+	int lopetus = *laskuri;
+
+	if (*x <= *koko && *y <= *koko){
+																// Jos osutaan tauluun, menn‰‰n eteenp‰in. Muuten error-viesti
+		if (taulu[*x-1][*koko-*y] != 1 && taulu[*x-1][*koko-*y] != 2){
+			if (vuoro == false){
+				taulu[*x-1][*koko-*y] = 1;						// Jos taulun alkioissa ei ole 1 tai 2, merkataan niihin ko. numero. 
+				*tarkista = 1;									// Koko - y, jotta akselisto menisi alhaalta ylˆs
+				lopetus++;
+			}
+			else{
+				taulu[*x-1][*koko-*y] = 2;
+				*tarkista = 2;
+				lopetus++;
+			}
+			vuoro = !vuoro;										// Vuoron vaihto merkkaamisen j‰lkeen
+		}
+		else {
+			printf("\tRuutu on varattu. Valitse toinen.\n");	// Jos valittu koordinaatti on varattu
+		}
+	}
+	else {
+		printf("\tValitsemasi ruutu ei osu koordinaatistoon. Valitse toinen.\n\n"); // Jos ei osuta ruudukkoon
+	}
+
+	return lopetus;
+}
+
+void Tarkistaja (int taulu[100][100], int *tarkista, char pelaaja1[20], char pelaaja2[20], bool &peli, int *laskuri, int *koko){
+	
+	int alusta = *koko;
+
+	for(int i = 0; i < *koko; i++){
+		for(int k = 0; k < *koko; k++){
+			if(taulu[k][i] == *tarkista && taulu[k][i+1] == *tarkista && taulu [k][i+2] == *tarkista && taulu[k][i+3] == *tarkista && taulu [k][i+4] == *tarkista){
+				if(*tarkista == 1){
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja1);		// Pystysuuntainen tarkistus. 
+				}														// Jos tarkista == 1, pelaaja1 voittaa, jos tarkista == 2, pelaaja2 voittaa
+				else{
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja2);
+				}
+				peli = false;											// Lopetetaan peli
+			}
+			if(taulu[k][i] == *tarkista && taulu[k+1][i] == *tarkista && taulu [k+2][i] == *tarkista && taulu[k+3][i] == *tarkista && taulu [k+4][i] == *tarkista){
+				if(*tarkista == 1){
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja1);		// Vaakasuuntainen tarkistus
+				}
+				else{
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja2);
+				}
+				peli = false;											// Lopetetaan peli
+			}
+			if(taulu[k][i] == *tarkista && taulu[k+1][i+1] == *tarkista && taulu [k+2][i+2] == *tarkista && taulu[k+3][i+3] == *tarkista && taulu [k+4][i+4] == *tarkista){
+				if(*tarkista == 1){
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja1);		// Vasemmalta ylh‰‰lt‰ oikealle alas tarkistus
+				}
+				else{
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja2);
+				}
+				peli = false;											// Lopetetaan peli
+			}
+			if(taulu[k][i] == *tarkista && taulu[k+1][i-1] == *tarkista && taulu [k+2][i-2] == *tarkista && taulu[k+3][i-3] == *tarkista && taulu [k+4][i-4] == *tarkista){
+				if(*tarkista == 1){
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja1);		// Vasemmalta alhaalta oikealle ylˆs tarkistus
+				}
+				else{
+					printf("\n\n\t%s on voittaja!\n\n", pelaaja2);
+				}
+				peli = false;											// Lopetetaan peli
+			}
+	
+		}	
+	}
+	
+	if(*laskuri == (alusta*alusta) && peli == true){
+		printf("\tTasapeli.\n\n");										// Jos koko pelialue on k‰ytetty ja peli on p‰‰ll‰, on kyseess‰ tasapeli
+		peli = false;
+	}
+
+
+}
